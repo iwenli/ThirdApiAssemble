@@ -22,9 +22,94 @@ namespace Test
             _faceService = new FaceService();
 
             btnSelect.Click += BtnSelect_Click;
+            btnRegister.Click += BtnRegister_Click;
+            btnVerify.Click += BtnVerify_Click;
+            btnDelete.Click += BtnDelete_Click;
+            btnIdentify.Click += BtnIdentify_Click;
+            btnUpdate.Click += BtnUpdate_Click;
+            btnFaceMatch.Click += BtnFaceMatch_Click;
         }
 
-        private void BtnSelect_Click(object sender, EventArgs e)
+         void BtnFaceMatch_Click(object sender, EventArgs e)
+        {
+            var imagePaths = GetImageFiles(10);
+            if (imagePaths == null) return;
+            picBoxImage.Image = Image.FromFile(imagePaths[0]);
+            var result = _faceService.FaceMatch(imagePaths, txtGroupId.Text);
+            txtLog1.Text = JsonConvert.SerializeObject(result);
+            AppendLogWarning(txtLog1.Text);
+        }
+
+        void BtnUpdate_Click(object sender, EventArgs e)
+        {
+            var imagePath = GetImageFiles()?[0];
+            if (imagePath == null) return;
+            picBoxImage.Image = Image.FromFile(imagePath);
+            var result = _faceService.FaceUpdate(imagePath, txtGroupId.Text, txtUserId.Text, txtUserInfo.Text);
+            txtLog1.Text = JsonConvert.SerializeObject(result);
+            AppendLogWarning("更新结果：{0}", result.ErrorCode == 0 ? "成功" : "失败");
+        }
+
+        void BtnIdentify_Click(object sender, EventArgs e)
+        {
+            var imagePath = GetImageFiles()?[0];
+            if (imagePath == null) return;
+            picBoxImage.Image = Image.FromFile(imagePath);
+            var result = _faceService.FaceIdentify(imagePath, txtGroupId.Text, 1);
+            txtLog1.Text = JsonConvert.SerializeObject(result);
+            AppendLogWarning("识别到 {0} 个用户", result.ResultNum);
+            for (int i = 0; i < result.ResultNum; i++)
+            {
+                AppendLogWarning("-----------------------");
+                AppendLogWarning("第 {0} 个用户信息(匹配度：{1})：", i + 1, result.Result[i].Scores[0]);
+                AppendLog("用户id：{0}", result.Result[i].UserId);
+                AppendLog("用户信息：{0}", result.Result[i].UserInfo);
+            }
+        }
+
+        void BtnDelete_Click(object sender, EventArgs e)
+        {
+            var result = _faceService.FaceDelete(txtUserId.Text, txtGroupId.Text);
+            txtLog1.Text = JsonConvert.SerializeObject(result);
+            AppendLogWarning("删除结果：{0}", result.ErrorCode == 0 ? "成功" : "失败");
+        }
+
+        void BtnVerify_Click(object sender, EventArgs e)
+        {
+            var imagePath = GetImageFiles()?[0];
+            if (imagePath == null) return;
+            picBoxImage.Image = Image.FromFile(imagePath);
+            var result = _faceService.FaceVerify(imagePath, txtUserId.Text, txtGroupId.Text);
+            txtLog1.Text = JsonConvert.SerializeObject(result);
+            AppendLogWarning("认证结果：{0}", result.ErrorCode == 0 && result.Result[0] >= 80 ? "成功" : "失败");
+        }
+
+        void BtnRegister_Click(object sender, EventArgs e)
+        {
+            var imagePath = GetImageFiles()?[0];
+            if (imagePath == null) return;
+            picBoxImage.Image = Image.FromFile(imagePath);
+            var result = _faceService.FaceRegister(imagePath, txtGroupId.Text, txtUserId.Text, txtUserInfo.Text);
+            txtLog1.Text = JsonConvert.SerializeObject(result);
+            AppendLogWarning("注册结果：{0}", result.ErrorCode > 0 ? "失败" : "成功");
+        }
+
+        void BtnSelect_Click(object sender, EventArgs e)
+        {
+            var imagePath = GetImageFiles()?[0];
+            if (imagePath == null) return;
+            picBoxImage.Image = Image.FromFile(imagePath);
+            var result = _faceService.FaceDetect(imagePath, 100);
+            txtLog1.Text = JsonConvert.SerializeObject(result);
+            ShowFaceDetectResult(result);
+        }
+
+        /// <summary>
+        /// 选择头像文件
+        /// </summary>
+        /// <param name="maxImageCounts"></param>
+        /// <returns></returns>
+        string[] GetImageFiles(int maxImageCounts = 1)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Title = "选择图像";
@@ -32,27 +117,28 @@ namespace Test
             openFileDialog.RestoreDirectory = true;
             openFileDialog.CheckPathExists = true;
             openFileDialog.CheckFileExists = true;
-            openFileDialog.Multiselect = false;
+            openFileDialog.Multiselect = maxImageCounts > 1;
             openFileDialog.FilterIndex = 1;
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
 
                 try
                 {
-                    picBoxImage.Image = Image.FromFile(openFileDialog.FileName);
-                    var result = _faceService.FaceDetect(openFileDialog.FileName, 100);
-                    ShowResult(result);
+                    return openFileDialog.FileNames;
                 }
                 catch (Exception ex)
                 {
                     AppendLogError(ex.Message);
                 }
-
             }
+            return null;
         }
 
-
-        void ShowResult(FaceDetectInfo faceResult)
+        /// <summary>
+        /// 人脸识别结果展示
+        /// </summary>
+        /// <param name="faceResult"></param>
+        void ShowFaceDetectResult(FaceDetectInfo faceResult)
         {
             txtLog.Clear();
             if (faceResult.ResultNum == 0)
@@ -65,14 +151,13 @@ namespace Test
                 for (int i = 0; i < faceResult.ResultNum; i++)
                 {
                     AppendLogWarning("-----------------------");
-                    AppendLogWarning("第{0}个人脸信息：", i + 1);
+                    AppendLogWarning("第{0}个人脸信息(可信度：{1})：", i + 1, faceResult.Result[i].FaceProbability);
                     AppendLog("年龄：{0}", faceResult.Result[i].Age);
                     AppendLog("性别：{0}  (可信度：{1})", faceResult.Result[i].Gender == "male" ? "男" : "女", faceResult.Result[i].GenderProbability);
                     AppendLog("颜值：{0}", faceResult.Result[i].Beauty);
                     AppendLog("表情：{0}", faceResult.Result[i].Expression == 0 ? "不笑" :
                         faceResult.Result[i].Expression == 1 ? "微笑" : "大笑");
-                    AppendLog("人脸可信度：{0}", faceResult.Result[i].FaceProbability);
-
+                    AppendLog("是否带眼镜：{0}  (可信度：{1})", faceResult.Result[i].Glasses == 0 ? "无眼镜" : faceResult.Result[i].Glasses == 1 ? "普通眼镜" : "墨镜", faceResult.Result[i].GlassesProbability);
 
                     AppendLog("脸型：{0}", JsonConvert.SerializeObject(faceResult.Result[i].Faceshape));
                     //AppendLog(JsonConvert.SerializeObject(faceResult.Result));

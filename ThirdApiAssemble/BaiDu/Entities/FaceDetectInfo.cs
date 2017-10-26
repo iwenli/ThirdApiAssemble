@@ -4,34 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using static BaiDu.Entities.FaceDetectInfo;
 
 namespace BaiDu.Entities
 {
     /// <summary>
-    /// 人脸识别信息结果集实体
+    /// 百度人脸识别相关接口
     /// </summary>
-    public class FaceDetectInfo
+    public class FaceDetectInfo : ResponseResult<FaceDetectResultInfo>
     {
-        #region 属性
-        /// <summary>
-        /// 人脸数目
-        /// </summary>
-        [JsonProperty(PropertyName = "result_num")]
-        public int ResultNum { set; get; }
-
-        /// <summary>
-        /// 人脸属性对象的集合
-        /// </summary>
-        [JsonProperty(PropertyName = "result")]
-        public FaceDetectResultInfo[] Result { set; get; }
-
-        /// <summary>
-        /// 日志id
-        /// </summary>
-        [JsonProperty(PropertyName = "log_id")]
-        public long LogId { set; get; }
-        #endregion
-
         #region 独立使用类  定义为内部类
         /// <summary>
         /// 人脸识别信息结果
@@ -328,6 +309,5 @@ namespace BaiDu.Entities
             public decimal Cartoon { set; get; }
         }
         #endregion
-
     }
 }

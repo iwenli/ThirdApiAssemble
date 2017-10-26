@@ -47,6 +47,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Entities\FaceDetectInfo.cs" />
+    <Compile Include="Entities\FaceIdentifyInfo.cs" />
+    <Compile Include="Entities\ResponseResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\FaceDemo.cs" />
     <Compile Include="Service\FaceService.cs" />
